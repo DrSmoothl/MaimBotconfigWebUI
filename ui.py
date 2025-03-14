@@ -211,7 +211,18 @@ def save_trigger(server_address, server_port, final_result_list,t_mongodb_host,t
 #==============================================
 #主要配置文件保存函数
 def save_config_to_file(t_config_data):
-    with open("config/bot_config.toml", "w", encoding="utf-8") as f:
+    filename = "config/bot_config.toml"
+    backup_filename = f"{filename}.bak"
+    if not os.path.exists(backup_filename):
+        if os.path.exists(filename):
+            logger.info(f"{filename} 已存在，正在备份到 {backup_filename}...")
+            shutil.copy(filename, backup_filename)  # 备份文件
+            logger.success(f"文件已备份到 {backup_filename}")
+        else:
+            logger.warning(f"{filename} 不存在，无法进行备份。")
+
+
+    with open(filename, "w", encoding="utf-8") as f:
         toml.dump(t_config_data, f)
     logger.success("配置已保存到 bot_config.toml 文件中")
 def save_bot_config(t_qqbot_qq, t_nickname,t_nickname_final_result):
