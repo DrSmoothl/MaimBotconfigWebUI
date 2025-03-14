@@ -253,6 +253,47 @@ def save_message_and_emoji_config(t_min_text_length,
     logger.info("消息和表情配置已保存到 bot_config.toml 文件中")
     return "消息和表情配置已保存"
 
+def save_response_model_config(t_model_r1_probability,
+                               t_model_r2_probability,
+                               t_model_r3_probability,
+                               t_max_response_length,
+                               t_model1_name,
+                               t_model1_provider,
+                               t_model1_pri_in,
+                               t_model1_pri_out,
+                               t_model2_name,
+                               t_model2_provider,
+                               t_model3_name,
+                               t_model3_provider,
+                               t_emotion_model_name,
+                               t_emotion_model_provider,
+                               t_topic_judge_model_name,
+                               t_topic_judge_model_provider,
+                               t_summary_by_topic_model_name,
+                               t_summary_by_topic_model_provider):
+    config_data["response"]["model_r1_probability"] = t_model_r1_probability
+    config_data["response"]["model_r2_probability"] = t_model_r2_probability
+    config_data["response"]["model_r3_probability"] = t_model_r3_probability
+    config_data["response"]["max_response_length"] = t_max_response_length
+    config_data['model']['llm_reasoning']['name'] = t_model1_name
+    config_data['model']['llm_reasoning']['provider'] = t_model1_provider
+    config_data['model']['llm_reasoning']['pri_in'] = t_model1_pri_in
+    config_data['model']['llm_reasoning']['pri_out'] = t_model1_pri_out
+    config_data['model']['llm_normal']['name'] = t_model2_name
+    config_data['model']['llm_normal']['provider'] = t_model2_provider
+    config_data['model']['llm_reasoning_minor']['name'] = t_model3_name
+    config_data['model']['llm_normal']['provider'] = t_model3_provider
+    config_data['model']['llm_emotion_judge']['name'] = t_emotion_model_name
+    config_data['model']['llm_emotion_judge']['provider'] = t_emotion_model_provider
+    config_data['model']['llm_topic_judge']['name'] = t_topic_judge_model_name
+    config_data['model']['llm_topic_judge']['provider'] = t_topic_judge_model_provider
+    config_data['model']['llm_summary_by_topic']['name'] = t_summary_by_topic_model_name
+    config_data['model']['llm_summary_by_topic']['provider'] = t_summary_by_topic_model_provider
+    save_config_to_file(config_data)
+    logger.info("回复&模型设置已保存到 bot_config.toml 文件中")
+    return "回复&模型设置已保存"
+
+
 with (gr.Blocks(title="MaimBot配置文件编辑") as app):
     gr.Markdown(
         value="""
@@ -750,7 +791,7 @@ with (gr.Blocks(title="MaimBot配置文件编辑") as app):
                     with gr.Row():
                         save_btn_message = gr.Textbox()
                         save_model_btn.click(
-                            save_config_to_file,
+                            save_response_model_config,
                             inputs=[model_r1_probability,model_r2_probability,model_r3_probability,max_response_length,model1_name, model1_provider, model1_pri_in, model1_pri_out, model2_name, model2_provider, model3_name, model3_provider, emotion_model_name, emotion_model_provider, topic_judge_model_name, topic_judge_model_provider, summary_by_topic_model_name,summary_by_topic_model_provider],
                             outputs=[save_btn_message]
                         )
