@@ -682,9 +682,12 @@ with (gr.Blocks(title="MaimBot配置文件编辑") as app):
                         )
                     with gr.Row():
                         model_r1_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_probability'], label="麦麦回答时选择主要回复模型1 模型的概率")
+                    with gr.Row():
                         model_r2_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_probability'], label="麦麦回答时选择主要回复模型2 模型的概率")
+                    with gr.Row():
                         model_r3_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_probability'], label="麦麦回答时选择主要回复模型3 模型的概率")
                         # 用于显示警告消息
+                    with gr.Row():
                         model_warning_greater_text = gr.Markdown()
                         model_warning_less_text = gr.Markdown()
 
@@ -744,11 +747,14 @@ with (gr.Blocks(title="MaimBot配置文件编辑") as app):
                                 summary_by_topic_model_provider = gr.Dropdown(choices=["SILICONFLOW","DEEP_SEEK", "CHAT_ANY_WHERE"], value=config_data['model']['llm_summary_by_topic']['provider'], label="主题总结模型提供商")
                     with gr.Row():
                         save_model_btn = gr.Button("保存 [模型] 配置")
+                    with gr.Row():
+                        save_btn_message = gr.Textbox()
                         save_model_btn.click(
                             save_config_to_file,
-                            inputs=[model1_name, model1_provider, model1_pri_in, model1_pri_out, model2_name, model2_provider, model3_name, model3_provider, emotion_model_name, emotion_model_provider, topic_judge_model_name, topic_judge_model_provider, summary_by_topic_model_name,summary_by_topic_model_provider],
-                            outputs=[gr.Textbox()]
+                            inputs=[model_r1_probability,model_r2_probability,model_r3_probability,max_response_length,model1_name, model1_provider, model1_pri_in, model1_pri_out, model2_name, model2_provider, model3_name, model3_provider, emotion_model_name, emotion_model_provider, topic_judge_model_name, topic_judge_model_provider, summary_by_topic_model_name,summary_by_topic_model_provider],
+                            outputs=[save_btn_message]
                         )
+
 
 
         with gr.TabItem("5-记忆&心情设置"):
