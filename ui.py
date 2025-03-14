@@ -97,6 +97,33 @@ def delete_item(selected_item, current_list):
         gr.update(choices=updated_list),
         ", ".join(updated_list)
     ]
+
+def add_int_item(new_item, current_list):
+    updated_list = current_list.copy()
+    stripped_item = new_item.strip()
+    if stripped_item:
+        try:
+            item = int(stripped_item)
+            updated_list.append(item)
+        except ValueError:
+            pass
+    return [
+        updated_list,  # 更新State
+        "\n".join(map(str, updated_list)),  # 更新TextArea
+        gr.update(choices=updated_list),  # 更新Dropdown
+        ", ".join(map(str, updated_list))  # 更新最终结果
+    ]
+
+def delete_int_item(selected_item, current_list):
+    updated_list = current_list.copy()
+    if selected_item in updated_list:
+        updated_list.remove(selected_item)
+    return [
+        updated_list,
+        "\n".join(map(str, updated_list)),
+        gr.update(choices=updated_list),
+        ", ".join(map(str, updated_list))
+    ]
 #env文件中插件值处理函数
 def parse_list_str(input_str):
     """
@@ -140,6 +167,21 @@ def format_list_to_str_alias(lst):
     """
     resarr = lst.split(", ")
     return resarr
+
+def format_list_to_int(lst):
+    resarr = []
+    if len(lst) != 0:
+        resarr = lst.split(", ")
+    # print(resarr)
+    # print(type(resarr))
+    ans = []
+    if len(resarr) != 0:
+        for lsts in resarr:
+            temp = int(lsts)
+            ans.append(temp)
+    # print(ans)
+    # print(type(ans))
+    return ans
 
 #env保存函数
 def save_trigger(server_address, server_port, final_result_list,t_mongodb_host,t_mongodb_port,t_mongodb_database_name,t_chatanywhere_base_url,t_chatanywhere_key,t_siliconflow_base_url,t_siliconflow_key,t_deepseek_base_url,t_deepseek_key):
@@ -270,10 +312,12 @@ def save_response_model_config(t_model_r1_probability,
                                t_topic_judge_model_name,
                                t_topic_judge_model_provider,
                                t_summary_by_topic_model_name,
-                               t_summary_by_topic_model_provider):
+                               t_summary_by_topic_model_provider,
+                               t_vlm_model_name,
+                               t_vlm_model_provider):
     config_data["response"]["model_r1_probability"] = t_model_r1_probability
-    config_data["response"]["model_r2_probability"] = t_model_r2_probability
-    config_data["response"]["model_r3_probability"] = t_model_r3_probability
+    config_data["response"]["model_v3_probability"] = t_model_r2_probability
+    config_data["response"]["model_r1_distill_probability"] = t_model_r3_probability
     config_data["response"]["max_response_length"] = t_max_response_length
     config_data['model']['llm_reasoning']['name'] = t_model1_name
     config_data['model']['llm_reasoning']['provider'] = t_model1_provider
@@ -289,10 +333,48 @@ def save_response_model_config(t_model_r1_probability,
     config_data['model']['llm_topic_judge']['provider'] = t_topic_judge_model_provider
     config_data['model']['llm_summary_by_topic']['name'] = t_summary_by_topic_model_name
     config_data['model']['llm_summary_by_topic']['provider'] = t_summary_by_topic_model_provider
+    config_data['model']['vlm']['name'] = t_vlm_model_name
+    config_data['model']['vlm']['provider'] = t_vlm_model_provider
     save_config_to_file(config_data)
     logger.info("回复&模型设置已保存到 bot_config.toml 文件中")
     return "回复&模型设置已保存"
+def save_memory_mood_config(t_build_memory_interval, t_memory_compress_rate, t_forget_memory_interval, t_memory_forget_time, t_memory_forget_percentage, t_memory_ban_words_final_result, t_mood_update_interval, t_mood_decay_rate, t_mood_intensity_factor):
+    config_data["memory"]["build_memory_interval"] = t_build_memory_interval
+    config_data["memory"]["memory_compress_rate"] = t_memory_compress_rate
+    config_data["memory"]["forget_memory_interval"] = t_forget_memory_interval
+    config_data["memory"]["memory_forget_time"] = t_memory_forget_time
+    config_data["memory"]["memory_forget_percentage"] = t_memory_forget_percentage
+    config_data["memory"]["memory_ban_words"] = format_list_to_str_alias(t_memory_ban_words_final_result)
+    config_data["mood"]["update_interval"] = t_mood_update_interval
+    config_data["mood"]["decay_rate"] = t_mood_decay_rate
+    config_data["mood"]["intensity_factor"] = t_mood_intensity_factor
+    save_config_to_file(config_data)
+    logger.info("记忆和心情设置已保存到 bot_config.toml 文件中")
+    return "记忆和心情设置已保存"
 
+def save_other_config(t_keywords_reaction_enabled,t_enable_advance_output, t_enable_kuuki_read, t_enable_debug_output, t_enable_friend_chat, t_chinese_typo_enabled, t_error_rate, t_min_freq, t_tone_error_rate, t_word_replace_rate):
+    config_data['keywords_reaction']['enable'] = t_keywords_reaction_enabled
+    config_data['others']['enable_advance_output'] = t_enable_advance_output
+    config_data['others']['enable_kuuki_read'] = t_enable_kuuki_read
+    config_data['others']['enable_debug_output'] = t_enable_debug_output
+    config_data["chinese_typo"]["enable"] = t_chinese_typo_enabled
+    config_data["chinese_typo"]["error_rate"] = t_error_rate
+    config_data["chinese_typo"]["min_freq"] = t_min_freq
+    config_data["chinese_typo"]["tone_error_rate"] = t_tone_error_rate
+    config_data["chinese_typo"]["word_replace_rate"] = t_word_replace_rate
+    save_config_to_file(config_data)
+    logger.info("其他设置已保存到 bot_config.toml 文件中")
+    return "其他设置已保存"
+
+def save_group_config(t_talk_allowed_final_result,
+                      t_talk_frequency_down_final_result,
+                      t_ban_user_id_final_result,):
+    config_data["groups"]["talk_allowed"] = format_list_to_int(t_talk_allowed_final_result)
+    config_data["groups"]["talk_frequency_down"] = format_list_to_int(t_talk_frequency_down_final_result)
+    config_data["groups"]["ban_user_id"] = format_list_to_int(t_ban_user_id_final_result)
+    save_config_to_file(config_data)
+    logger.info("群聊设置已保存到 bot_config.toml 文件中")
+    return "群聊设置已保存"
 
 with (gr.Blocks(title="MaimBot配置文件编辑") as app):
     gr.Markdown(
@@ -724,9 +806,9 @@ with (gr.Blocks(title="MaimBot配置文件编辑") as app):
                     with gr.Row():
                         model_r1_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_probability'], label="麦麦回答时选择主要回复模型1 模型的概率")
                     with gr.Row():
-                        model_r2_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_probability'], label="麦麦回答时选择主要回复模型2 模型的概率")
+                        model_r2_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_v3_probability'], label="麦麦回答时选择主要回复模型2 模型的概率")
                     with gr.Row():
-                        model_r3_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_probability'], label="麦麦回答时选择主要回复模型3 模型的概率")
+                        model_r3_probability = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['response']['model_r1_distill_probability'], label="麦麦回答时选择主要回复模型3 模型的概率")
                         # 用于显示警告消息
                     with gr.Row():
                         model_warning_greater_text = gr.Markdown()
@@ -786,18 +868,24 @@ with (gr.Blocks(title="MaimBot配置文件编辑") as app):
                                 summary_by_topic_model_name = gr.Textbox(value=config_data['model']['llm_summary_by_topic']['name'], label="主题总结模型名称")
                             with gr.Row():
                                 summary_by_topic_model_provider = gr.Dropdown(choices=["SILICONFLOW","DEEP_SEEK", "CHAT_ANY_WHERE"], value=config_data['model']['llm_summary_by_topic']['provider'], label="主题总结模型提供商")
+                        with gr.TabItem("5-识图模型"):
+                            with gr.Row():
+                                gr.Markdown(
+                                    """### 识图模型设置"""
+                                )
+                            with gr.Row():
+                                vlm_model_name = gr.Textbox(value=config_data['model']['vlm']['name'], label="识图模型名称")
+                            with gr.Row():
+                                vlm_model_provider = gr.Dropdown(choices=["SILICONFLOW","DEEP_SEEK", "CHAT_ANY_WHERE"], value=config_data['model']['vlm']['provider'], label="识图模型提供商")
                     with gr.Row():
-                        save_model_btn = gr.Button("保存 [模型] 配置")
+                        save_model_btn = gr.Button("保存回复&模型设置")
                     with gr.Row():
                         save_btn_message = gr.Textbox()
                         save_model_btn.click(
                             save_response_model_config,
-                            inputs=[model_r1_probability,model_r2_probability,model_r3_probability,max_response_length,model1_name, model1_provider, model1_pri_in, model1_pri_out, model2_name, model2_provider, model3_name, model3_provider, emotion_model_name, emotion_model_provider, topic_judge_model_name, topic_judge_model_provider, summary_by_topic_model_name,summary_by_topic_model_provider],
+                            inputs=[model_r1_probability,model_r2_probability,model_r3_probability,max_response_length,model1_name, model1_provider, model1_pri_in, model1_pri_out, model2_name, model2_provider, model3_name, model3_provider, emotion_model_name, emotion_model_provider, topic_judge_model_name, topic_judge_model_provider, summary_by_topic_model_name,summary_by_topic_model_provider,vlm_model_name, vlm_model_provider],
                             outputs=[save_btn_message]
                         )
-
-
-
         with gr.TabItem("5-记忆&心情设置"):
             with gr.Row():
                 with gr.Column(scale=3):
@@ -807,13 +895,244 @@ with (gr.Blocks(title="MaimBot配置文件编辑") as app):
                         )
                     with gr.Row():
                         build_memory_interval = gr.Number(value=config_data['memory']['build_memory_interval'], label="记忆构建间隔 单位秒,间隔越低，麦麦学习越多，但是冗余信息也会增多")
+                    with gr.Row():
+                        memory_compress_rate = gr.Number(value=config_data['memory']['memory_compress_rate'], label="记忆压缩率 控制记忆精简程度 建议保持默认,调高可以获得更多信息，但是冗余信息也会增多")
+                    with gr.Row():
+                        forget_memory_interval = gr.Number(value=config_data['memory']['forget_memory_interval'], label="记忆遗忘间隔 单位秒   间隔越低，麦麦遗忘越频繁，记忆更精简，但更难学习")
+                    with gr.Row():
+                        memory_forget_time = gr.Number(value=config_data['memory']['memory_forget_time'], label="多长时间后的记忆会被遗忘 单位小时 ")
+                    with gr.Row():
+                        memory_forget_percentage = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['memory']['memory_forget_percentage'], label="记忆遗忘比例 控制记忆遗忘程度 越大遗忘越多 建议保持默认")
+                    with gr.Row():
+                        memory_ban_words_list = config_data['memory']['memory_ban_words']
+                        with gr.Blocks():
+                            memory_ban_words_list_state = gr.State(value=memory_ban_words_list.copy())
 
+                        with gr.Row():
+                            memory_ban_words_list_display = gr.TextArea(
+                                value="\n".join(memory_ban_words_list),
+                                label="不希望记忆词列表",
+                                interactive=False,
+                                lines=5
+                            )
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                memory_ban_words_new_item_input = gr.Textbox(label="添加不希望记忆词")
+                                memory_ban_words_add_btn = gr.Button("添加", scale=1)
 
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                memory_ban_words_item_to_delete = gr.Dropdown(
+                                    choices=memory_ban_words_list,
+                                    label="选择要删除的不希望记忆词"
+                                )
+                            memory_ban_words_delete_btn = gr.Button("删除", scale=1)
 
+                        memory_ban_words_final_result = gr.Text(label="修改后的不希望记忆词列表")
+                        memory_ban_words_add_btn.click(
+                            add_item,
+                            inputs=[memory_ban_words_new_item_input, memory_ban_words_list_state],
+                            outputs=[memory_ban_words_list_state, memory_ban_words_list_display, memory_ban_words_item_to_delete, memory_ban_words_final_result]
+                        )
 
+                        memory_ban_words_delete_btn.click(
+                            delete_item,
+                            inputs=[memory_ban_words_item_to_delete, memory_ban_words_list_state],
+                            outputs=[memory_ban_words_list_state, memory_ban_words_list_display, memory_ban_words_item_to_delete, memory_ban_words_final_result]
+                        )
+                    with gr.Row():
+                        mood_update_interval = gr.Number(value=config_data['mood']['mood_update_interval'], label="心情更新间隔 单位秒")
+                    with gr.Row():
+                        mood_decay_rate = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['mood']['mood_decay_rate'], label="心情衰减率")
+                    with gr.Row():
+                        mood_intensity_factor = gr.Number(value=config_data['mood']['mood_intensity_factor'], label="心情强度因子")
+                    with gr.Row():
+                        save_memory_mood_btn = gr.Button("保存 [Memory] 配置")
+                    with gr.Row():
+                        save_memory_mood_message = gr.Textbox()
+                    with gr.Row():
+                        save_memory_mood_btn.click(
+                            save_memory_mood_config,
+                            inputs=[build_memory_interval, memory_compress_rate, forget_memory_interval, memory_forget_time, memory_forget_percentage, memory_ban_words_final_result, mood_update_interval, mood_decay_rate, mood_intensity_factor],
+                            outputs=[save_memory_mood_message]
+                        )
+        with gr.TabItem("6-群组设置"):
+            with gr.Row():
+                with gr.Column(scale=3):
+                    with gr.Row():
+                        gr.Markdown(
+                            """## 群组设置"""
+                        )
+                    with gr.Row():
+                        gr.Markdown(
+                            """### 可以回复消息的群"""
+                        )
+                    with gr.Row():
+                        talk_allowed_list = config_data['groups']['talk_allowed']
+                        with gr.Blocks():
+                            talk_allowed_list_state = gr.State(value=talk_allowed_list.copy())
 
+                        with gr.Row():
+                            talk_allowed_list_display = gr.TextArea(
+                                value="\n".join(map(str, talk_allowed_list)),
+                                label="可以回复消息的群列表",
+                                interactive=False,
+                                lines=5
+                            )
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                talk_allowed_new_item_input = gr.Textbox(label="添加新群")
+                                talk_allowed_add_btn = gr.Button("添加", scale=1)
 
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                talk_allowed_item_to_delete = gr.Dropdown(
+                                    choices=talk_allowed_list,
+                                    label="选择要删除的群"
+                                )
+                            talk_allowed_delete_btn = gr.Button("删除", scale=1)
 
+                        talk_allowed_final_result = gr.Text(label="修改后的可以回复消息的群列表")
+                        talk_allowed_add_btn.click(
+                            add_int_item,
+                            inputs=[talk_allowed_new_item_input, talk_allowed_list_state],
+                            outputs=[talk_allowed_list_state, talk_allowed_list_display, talk_allowed_item_to_delete, talk_allowed_final_result]
+                        )
+
+                        talk_allowed_delete_btn.click(
+                            delete_int_item,
+                            inputs=[talk_allowed_item_to_delete, talk_allowed_list_state],
+                            outputs=[talk_allowed_list_state, talk_allowed_list_display, talk_allowed_item_to_delete, talk_allowed_final_result]
+                        )
+                    with gr.Row():
+                        talk_frequency_down_list = config_data['groups']['talk_frequency_down']
+                        with gr.Blocks():
+                            talk_frequency_down_list_state = gr.State(value=talk_frequency_down_list.copy())
+
+                        with gr.Row():
+                            talk_frequency_down_list_display = gr.TextArea(
+                                value="\n".join(map(str, talk_frequency_down_list)),
+                                label="降低回复频率的群列表",
+                                interactive=False,
+                                lines=5
+                            )
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                talk_frequency_down_new_item_input = gr.Textbox(label="添加新群")
+                                talk_frequency_down_add_btn = gr.Button("添加", scale=1)
+
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                talk_frequency_down_item_to_delete = gr.Dropdown(
+                                    choices=talk_frequency_down_list,
+                                    label="选择要删除的群"
+                                )
+                            talk_frequency_down_delete_btn = gr.Button("删除", scale=1)
+
+                        talk_frequency_down_final_result = gr.Text(label="修改后的降低回复频率的群列表")
+                        talk_frequency_down_add_btn.click(
+                            add_int_item,
+                            inputs=[talk_frequency_down_new_item_input, talk_frequency_down_list_state],
+                            outputs=[talk_frequency_down_list_state, talk_frequency_down_list_display, talk_frequency_down_item_to_delete, talk_frequency_down_final_result]
+                        )
+
+                        talk_frequency_down_delete_btn.click(
+                            delete_int_item,
+                            inputs=[talk_frequency_down_item_to_delete, talk_frequency_down_list_state],
+                            outputs=[talk_frequency_down_list_state, talk_frequency_down_list_display, talk_frequency_down_item_to_delete, talk_frequency_down_final_result]
+                        )
+                    with gr.Row():
+                        ban_user_id_list = config_data['groups']['ban_user_id']
+                        with gr.Blocks():
+                            ban_user_id_list_state = gr.State(value=ban_user_id_list.copy())
+
+                        with gr.Row():
+                            ban_user_id_list_display = gr.TextArea(
+                                value="\n".join(map(str, ban_user_id_list)),
+                                label="禁止回复消息的QQ号列表",
+                                interactive=False,
+                                lines=5
+                            )
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                ban_user_id_new_item_input = gr.Textbox(label="添加新QQ号")
+                                ban_user_id_add_btn = gr.Button("添加", scale=1)
+
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                ban_user_id_item_to_delete = gr.Dropdown(
+                                    choices=ban_user_id_list,
+                                    label="选择要删除的QQ号"
+                                )
+                            ban_user_id_delete_btn = gr.Button("删除", scale=1)
+
+                        ban_user_id_final_result = gr.Text(label="修改后的禁止回复消息的QQ号列表")
+                        ban_user_id_add_btn.click(
+                            add_int_item,
+                            inputs=[ban_user_id_new_item_input, ban_user_id_list_state],
+                            outputs=[ban_user_id_list_state, ban_user_id_list_display, ban_user_id_item_to_delete, ban_user_id_final_result]
+                        )
+
+                        ban_user_id_delete_btn.click(
+                            delete_int_item,
+                            inputs=[ban_user_id_item_to_delete, ban_user_id_list_state],
+                            outputs=[ban_user_id_list_state, ban_user_id_list_display, ban_user_id_item_to_delete, ban_user_id_final_result]
+                        )
+                    with gr.Row():
+                        save_group_btn = gr.Button("保存群组设置")
+                    with gr.Row():
+                        save_group_btn_message = gr.Textbox()
+                    with gr.Row():
+                        save_group_btn.click(
+                            save_group_config,
+                            inputs=[
+                                talk_allowed_final_result,
+                                talk_frequency_down_final_result,
+                                ban_user_id_final_result,
+                            ],
+                            outputs=[save_group_btn_message]
+                        )
+        with gr.TabItem("7-其他设置"):
+            with gr.Row():
+                with gr.Column(scale=3):
+                    with gr.Row():
+                        gr.Markdown(
+                            """### 其他设置"""
+                        )
+                    with gr.Row():
+                        keywords_reaction_enabled = gr.Checkbox(value=config_data['keywords_reaction']['enable'], label="是否针对某个关键词作出反应")
+                    with gr.Row():
+                        enable_advance_output = gr.Checkbox(value=config_data['others']['enable_advance_output'], label="是否开启高级输出")
+                    with gr.Row():
+                        enable_kuuki_read = gr.Checkbox(value=config_data['others']['enable_kuuki_read'], label="是否启用读空气功能")
+                    with gr.Row():
+                        enable_debug_output = gr.Checkbox(value=config_data['others']['enable_debug_output'], label="是否开启调试输出")
+                    with gr.Row():
+                        enable_friend_chat = gr.Checkbox(value=config_data['others']['enable_friend_chat'], label="是否开启好友聊天")
+                    with gr.Row():
+                        gr.Markdown(
+                            """### 中文错别字设置"""
+                        )
+                    with gr.Row():
+                        chinese_typo_enabled = gr.Checkbox(value=config_data['chinese_typo']['enable'], label="是否开启中文错别字")
+                    with gr.Row():
+                        error_rate = gr.Slider(minimum=0, maximum=1, step=0.001, value=config_data['chinese_typo']['error_rate'], label="单字替换概率")
+                    with gr.Row():
+                        min_freq = gr.Number(value=config_data['chinese_typo']['min_freq'], label="最小字频阈值")
+                    with gr.Row():
+                        tone_error_rate = gr.Slider(minimum=0, maximum=1, step=0.01, value=config_data['chinese_typo']['tone_error_rate'], label="声调错误概率")
+                    with gr.Row():
+                        word_replace_rate = gr.Slider(minimum=0, maximum=1, step=0.001, value=config_data['chinese_typo']['word_replace_rate'], label="整词替换概率")
+                    with gr.Row():
+                        save_other_config_btn = gr.Button("保存其他配置")
+                    with gr.Row():
+                        save_other_config_message = gr.Textbox()
+                    with gr.Row():
+                        save_other_config_btn.click(
+                            save_other_config,
+                            inputs=[keywords_reaction_enabled,enable_advance_output, enable_kuuki_read, enable_debug_output, enable_friend_chat, chinese_typo_enabled, error_rate, min_freq, tone_error_rate, word_replace_rate],
+                            outputs=[save_other_config_message]
+                        )
     app.queue().launch(#concurrency_count=511, max_size=1022
         server_name="0.0.0.0",
         inbrowser=True,
