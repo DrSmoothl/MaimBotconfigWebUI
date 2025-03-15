@@ -157,34 +157,6 @@ def format_list_to_str(lst):
     res = res[:-1]
     return "[" + res + "]"
 
-def format_list_to_str_alias(lst):
-    """
-    将Python列表转换为形如["src2.plugins.chat"]的字符串格式
-    format_list_to_str(['src2.plugins.chat'])
-    '["src2.plugins.chat"]'
-    format_list_to_str([1, "two", 3.0])
-    '[1, "two", 3.0]'
-    """
-    resarr = []
-    if len(lst) != 0:
-        resarr = lst.split(", ")
-
-    return resarr
-
-def format_list_to_int(lst):
-    resarr = []
-    if len(lst) != 0:
-        resarr = lst.split(", ")
-    # print(resarr)
-    # print(type(resarr))
-    ans = []
-    if len(resarr) != 0:
-        for lsts in resarr:
-            temp = int(lsts)
-            ans.append(temp)
-    # print(ans)
-    # print(type(ans))
-    return ans
 
 #env保存函数
 def save_trigger(server_address, server_port, final_result_list,t_mongodb_host,t_mongodb_port,t_mongodb_database_name,t_chatanywhere_base_url,t_chatanywhere_key,t_siliconflow_base_url,t_siliconflow_key,t_deepseek_base_url,t_deepseek_key):
@@ -228,7 +200,7 @@ def save_config_to_file(t_config_data):
 def save_bot_config(t_qqbot_qq, t_nickname,t_nickname_final_result):
     config_data["bot"]["qq"] = int(t_qqbot_qq)
     config_data["bot"]["nickname"] = t_nickname
-    config_data["bot"]["alias_names"] = format_list_to_str_alias(t_nickname_final_result)
+    config_data["bot"]["alias_names"] = t_nickname_final_result
     save_config_to_file(config_data)
     logger.info("Bot配置已保存")
     return "Bot配置已保存"
@@ -298,8 +270,8 @@ def save_message_and_emoji_config(t_min_text_length,
     config_data["message"]["response_willing_amplifier"] = t_response_willing_amplifier
     config_data["message"]["response_interested_rate_amplifier"] = t_response_interested_rate_amplifier
     config_data["message"]["down_frequency_rate"] = t_down_frequency_rate
-    config_data["message"]["ban_words"] = format_list_to_str_alias(t_ban_words_final_result)
-    config_data["message"]["ban_msgs_regex"] = format_list_to_str_alias(t_ban_msgs_regex_final_result)
+    config_data["message"]["ban_words"] =t_ban_words_final_result
+    config_data["message"]["ban_msgs_regex"] = t_ban_msgs_regex_final_result
     config_data["emoji"]["check_interval"] = t_check_interval
     config_data["emoji"]["register_interval"] = t_register_interval
     config_data["emoji"]["auto_save"] = t_auto_save
@@ -358,7 +330,7 @@ def save_memory_mood_config(t_build_memory_interval, t_memory_compress_rate, t_f
     config_data["memory"]["forget_memory_interval"] = t_forget_memory_interval
     config_data["memory"]["memory_forget_time"] = t_memory_forget_time
     config_data["memory"]["memory_forget_percentage"] = t_memory_forget_percentage
-    config_data["memory"]["memory_ban_words"] = format_list_to_str_alias(t_memory_ban_words_final_result)
+    config_data["memory"]["memory_ban_words"] = t_memory_ban_words_final_result
     config_data["mood"]["update_interval"] = t_mood_update_interval
     config_data["mood"]["decay_rate"] = t_mood_decay_rate
     config_data["mood"]["intensity_factor"] = t_mood_intensity_factor
@@ -383,9 +355,9 @@ def save_other_config(t_keywords_reaction_enabled,t_enable_advance_output, t_ena
 def save_group_config(t_talk_allowed_final_result,
                       t_talk_frequency_down_final_result,
                       t_ban_user_id_final_result,):
-    config_data["groups"]["talk_allowed"] = format_list_to_int(t_talk_allowed_final_result)
-    config_data["groups"]["talk_frequency_down"] = format_list_to_int(t_talk_frequency_down_final_result)
-    config_data["groups"]["ban_user_id"] = format_list_to_int(t_ban_user_id_final_result)
+    config_data["groups"]["talk_allowed"] = t_talk_allowed_final_result
+    config_data["groups"]["talk_frequency_down"] = t_talk_frequency_down_final_result
+    config_data["groups"]["ban_user_id"] = t_ban_user_id_final_result
     save_config_to_file(config_data)
     logger.info("群聊设置已保存到 bot_config.toml 文件中")
     return "群聊设置已保存"
@@ -393,11 +365,11 @@ def save_group_config(t_talk_allowed_final_result,
 with gr.Blocks(title="MaimBot配置文件编辑") as app:
     gr.Markdown(
         value="""
-        欢迎使用由墨梓柒MotricSeven编写的MaimBot配置文件编辑器\n
+        ### 欢迎使用由墨梓柒MotricSeven编写的MaimBot配置文件编辑器\n
         """
     )
     gr.Markdown(
-        value="配置文件版本：" + config_data["inner"]["version"]
+        value="### 配置文件版本：" + config_data["inner"]["version"]
     )
     with gr.Tabs():
         with gr.TabItem("0-环境设置"):
@@ -539,7 +511,7 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                             interactive=True
                         )
                     with gr.Row():
-                        save_env_btn = gr.Button("保存环境配置")
+                        save_env_btn = gr.Button("保存环境配置",variant="primary")
                     with gr.Row():
                         save_env_btn.click(
                             save_trigger,
@@ -608,7 +580,7 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                         elem_classes="save_bot_btn"
                     ).click(
                         save_bot_config,
-                        inputs=[qqbot_qq, nickname,nickname_final_result],
+                        inputs=[qqbot_qq, nickname,nickname_list_state],
                         outputs=[gr.Textbox(
                             label="保存Bot结果"
                         )]
@@ -658,18 +630,19 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                     interactive=True
                 )
             with gr.Row():
-                gr.Button(
+                personal_save_btn = gr.Button(
                     "保存人格配置",
                     variant="primary",
                     elem_id="save_personality_btn",
                     elem_classes="save_personality_btn"
-                ).click(
-                    save_personality_config,
-                    inputs=[personality_1, personality_2, personality_3, prompt_schedule],
-                    outputs=[gr.Textbox(
-                        label="保存人格结果"
-                    )]
                 )
+            with gr.Row():
+                personal_save_message = gr.Textbox(label="保存人格结果")
+            personal_save_btn.click(
+                save_personality_config,
+                inputs=[personality_1, personality_2, personality_3, prompt_schedule],
+                outputs=[personal_save_message]
+            )
         with gr.TabItem("3-消息&表情包设置"):
             with gr.Row():
                 with gr.Column(scale=3):
@@ -783,33 +756,36 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                     with gr.Row():
                         check_prompt = gr.Textbox(value=config_data['emoji']['check_prompt'], label="表情包过滤要求")
                     with gr.Row():
-                        gr.Button(
+                        emoji_save_btn = gr.Button(
                             "保存消息&表情包设置",
                             variant="primary",
                             elem_id="save_personality_btn",
                             elem_classes="save_personality_btn"
-                        ).click(
-                            save_message_and_emoji_config,
-                            inputs=[
-                                min_text_length,
-                                max_context_size,
-                                emoji_chance,
-                                thinking_timeout,
-                                response_willing_amplifier,
-                                response_interested_rate_amplifier,
-                                down_frequency_rate,
-                                ban_words_final_result,
-                                ban_msgs_regex_final_result,
-                                check_interval,
-                                register_interval,
-                                auto_save,
-                                enable_check,
-                                check_prompt
-                            ],
-                            outputs=[gr.Textbox(
-                                label="消息&表情包设置保存结果"
-                            )]
                         )
+                    with gr.Row():
+                        emoji_save_message = gr.Textbox(
+                            label="消息&表情包设置保存结果"
+                        )
+                    emoji_save_btn.click(
+                        save_message_and_emoji_config,
+                        inputs=[
+                            min_text_length,
+                            max_context_size,
+                            emoji_chance,
+                            thinking_timeout,
+                            response_willing_amplifier,
+                            response_interested_rate_amplifier,
+                            down_frequency_rate,
+                            ban_words_list_state,
+                            ban_msgs_regex_list_state,
+                            check_interval,
+                            register_interval,
+                            auto_save,
+                            enable_check,
+                            check_prompt
+                        ],
+                        outputs=[emoji_save_message]
+                    )
         with gr.TabItem("4-回复&模型设置"):
             with gr.Row():
                 with gr.Column(scale=3):
@@ -892,7 +868,7 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                             with gr.Row():
                                 vlm_model_provider = gr.Dropdown(choices=["SILICONFLOW","DEEP_SEEK", "CHAT_ANY_WHERE"], value=config_data['model']['vlm']['provider'], label="识图模型提供商")
                     with gr.Row():
-                        save_model_btn = gr.Button("保存回复&模型设置")
+                        save_model_btn = gr.Button("保存回复&模型设置",variant="primary", elem_id="save_model_btn")
                     with gr.Row():
                         save_btn_message = gr.Textbox()
                         save_model_btn.click(
@@ -961,13 +937,13 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                     with gr.Row():
                         mood_intensity_factor = gr.Number(value=config_data['mood']['mood_intensity_factor'], label="心情强度因子")
                     with gr.Row():
-                        save_memory_mood_btn = gr.Button("保存 [Memory] 配置")
+                        save_memory_mood_btn = gr.Button("保存记忆&心情设置",variant="primary")
                     with gr.Row():
                         save_memory_mood_message = gr.Textbox()
                     with gr.Row():
                         save_memory_mood_btn.click(
                             save_memory_mood_config,
-                            inputs=[build_memory_interval, memory_compress_rate, forget_memory_interval, memory_forget_time, memory_forget_percentage, memory_ban_words_final_result, mood_update_interval, mood_decay_rate, mood_intensity_factor],
+                            inputs=[build_memory_interval, memory_compress_rate, forget_memory_interval, memory_forget_time, memory_forget_percentage, memory_ban_words_list_state, mood_update_interval, mood_decay_rate, mood_intensity_factor],
                             outputs=[save_memory_mood_message]
                         )
         with gr.TabItem("6-群组设置"):
@@ -1093,16 +1069,16 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                             outputs=[ban_user_id_list_state, ban_user_id_list_display, ban_user_id_item_to_delete, ban_user_id_final_result]
                         )
                     with gr.Row():
-                        save_group_btn = gr.Button("保存群组设置")
+                        save_group_btn = gr.Button("保存群组设置",variant="primary")
                     with gr.Row():
                         save_group_btn_message = gr.Textbox()
                     with gr.Row():
                         save_group_btn.click(
                             save_group_config,
                             inputs=[
-                                talk_allowed_final_result,
-                                talk_frequency_down_final_result,
-                                ban_user_id_final_result,
+                                talk_allowed_list_state,
+                                talk_frequency_down_list_state,
+                                ban_user_id_list_state,
                             ],
                             outputs=[save_group_btn_message]
                         )
@@ -1138,7 +1114,7 @@ with gr.Blocks(title="MaimBot配置文件编辑") as app:
                     with gr.Row():
                         word_replace_rate = gr.Slider(minimum=0, maximum=1, step=0.001, value=config_data['chinese_typo']['word_replace_rate'], label="整词替换概率")
                     with gr.Row():
-                        save_other_config_btn = gr.Button("保存其他配置")
+                        save_other_config_btn = gr.Button("保存其他配置",variant="primary")
                     with gr.Row():
                         save_other_config_message = gr.Textbox()
                     with gr.Row():
